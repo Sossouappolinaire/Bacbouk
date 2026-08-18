@@ -1,0 +1,16 @@
+{
+  "name": "fb-video-downloader",
+  "version": "1.0.0",
+  "description": "Telecharge et lit des videos Facebook a partir de liens",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "postinstall": "curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && chmod a+rx /usr/local/bin/yt-dlp"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

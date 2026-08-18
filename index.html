@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Téléchargeur Vidéo Facebook</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📥 Téléchargeur Vidéo Facebook</h1>
+      <p>Colle un ou plusieurs liens de vidéos Facebook (un lien par ligne)</p>
+    </header>
+
+    <div class="input-area">
+      <textarea
+        id="linksInput"
+        placeholder="https://www.facebook.com/.../videos/...&#10;https://www.facebook.com/watch/?v=..."
+        rows="5"
+      ></textarea>
+      <button id="submitBtn">Récupérer les vidéos</button>
+    </div>
+
+    <div id="status" class="status hidden"></div>
+
+    <div id="results" class="results"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
