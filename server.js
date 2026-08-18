@@ -9,12 +9,21 @@ const YT_DLP_BIN = path.join(__dirname, 'yt-dlp-bin');
 app.use(express.json());
 app.use(express.static(__dirname));
 
+// Formats autorisés (whitelist) — on ne laisse jamais l'utilisateur injecter
+// une valeur libre dans la commande yt-dlp, seulement choisir une clé connue.
+const QUALITY_FORMATS = {
+  best: 'best[ext=mp4]/best',
+  hd: 'best[height<=720][ext=mp4]/best[height<=720]/best',
+  sd: 'best[height<=480][ext=mp4]/best[height<=480]/best',
+};
+
 // Extrait les infos d'une seule vidéo Facebook via yt-dlp
 // Utilise execFile (arguments passés en tableau, pas via un shell) pour éviter
 // tout risque d'injection de commande a partir d'un lien fourni par l'utilisateur.
-function extractVideo(url) {
+function extractVideo(url, quality) {
   return new Promise((resolve) => {
-    const args = ['-j', '-f', 'best[ext=mp4]/best', '--no-playlist', '--', url];
+    const formatString = QUALITY_FORMATS[quality] || QUALITY_FORMATS.best;
+    const args = ['-j', '-f', formatString, '--no-playlist', '--', url];
 
     execFile(YT_DLP_BIN, args, { timeout: 30000, maxBuffer: 1024 * 1024 * 10 }, (error, stdout) => {
       if (error) {
@@ -48,6 +57,7 @@ function extractVideo(url) {
           url,
           success: true,
           title: info.title || 'Vidéo Facebook',
+          uploader: info.uploader || info.channel || info.uploader_id || null,
           thumbnail: info.thumbnail || null,
           duration: info.duration || null,
           directUrl,
@@ -60,7 +70,7 @@ function extractVideo(url) {
 }
 
 app.post('/api/extract', async (req, res) => {
-  const { links } = req.body;
+  const { links, quality } = req.body;
 
   if (!links || !Array.isArray(links) || links.length === 0) {
     return res.status(400).json({ error: 'Aucun lien fourni.' });
@@ -76,8 +86,47 @@ app.post('/api/extract', async (req, res) => {
     return res.status(400).json({ error: 'Aucun lien Facebook valide trouvé.' });
   }
 
-  const results = await Promise.all(cleanLinks.map(extractVideo));
+  const safeQuality = QUALITY_FORMATS[quality] ? quality : 'best';
+  const results = await Promise.all(cleanLinks.map((l) => extractVideo(l, safeQuality)));
   res.json({ results });
+});
+
+// Proxy de téléchargement : force le téléchargement (Content-Disposition)
+// et évite le probleme des liens cross-origin ou l'attribut "download" HTML
+// est ignore par le navigateur. Necessaire aussi pour le telechargement groupe.
+app.get('/api/download', async (req, res) => {
+  const { url, filename } = req.query;
+
+  if (!url || typeof url !== 'string') {
+    return res.status(400).send('Lien manquant.');
+  }
+
+  try {
+    const upstream = await fetch(url);
+    if (!upstream.ok || !upstream.body) {
+      return res.status(502).send('Impossible de récupérer le fichier depuis la source.');
+    }
+
+    const safeName = (typeof filename === 'string' ? filename : 'video.mp4')
+      .replace(/[/\\?%*:|"<>]/g, '')
+      .slice(0, 150) || 'video.mp4';
+
+    res.setHeader('Content-Disposition', `attachment; filename="${safeName}"`);
+    res.setHeader('Content-Type', upstream.headers.get('content-type') || 'video/mp4');
+    const contentLength = upstream.headers.get('content-length');
+    if (contentLength) {
+      res.setHeader('Content-Length', contentLength);
+    }
+    // Expose Content-Length au JS cote navigateur (le fetch API ne l'expose
+    // pas automatiquement sur les requetes cross-origin, ici c'est same-origin
+    // mais on le declare explicitement pour rester robuste).
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Disposition');
+
+    const { Readable } = require('stream');
+    Readable.fromWeb(upstream.body).pipe(res);
+  } catch (e) {
+    res.status(500).send('Erreur lors du téléchargement.');
+  }
 });
 
 app.get('/health', (req, res) => res.send('OK'));

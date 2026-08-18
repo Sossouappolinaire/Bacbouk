@@ -3,28 +3,70 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Téléchargeur Vidéo Facebook</title>
+  <title>Flux — Téléchargeur de vidéos Facebook</title>
+  <meta name="description" content="Colle un ou plusieurs liens de vidéos Facebook, choisis la qualité, et télécharge-les avec suivi de progression en direct." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2310131C'/%3E%3Cpath d='M10 9v10l9-5z' fill='%2314B8A6'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>📥 Téléchargeur Vidéo Facebook</h1>
-      <p>Colle un ou plusieurs liens de vidéos Facebook (un lien par ligne)</p>
+  <div id="topProgress" class="top-progress" aria-hidden="true"><span class="top-progress__bar"></span></div>
+
+  <div class="page">
+    <header class="header">
+      <div class="brand">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="22" height="22"><rect width="32" height="32" rx="8" fill="#10131C"/><path d="M10 9v14l12-7z" fill="#14B8A6"/></svg>
+        </span>
+        <div class="brand__text">
+          <span class="brand__name">Flux</span>
+          <span class="brand__tagline">Téléchargeur de vidéos Facebook</span>
+        </div>
+      </div>
     </header>
 
-    <div class="input-area">
-      <textarea
-        id="linksInput"
-        placeholder="https://www.facebook.com/.../videos/...&#10;https://www.facebook.com/watch/?v=..."
-        rows="5"
-      ></textarea>
-      <button id="submitBtn">Récupérer les vidéos</button>
-    </div>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">Lien → fichier</p>
+        <h1>Colle un lien, récupère la vidéo.</h1>
+        <p class="hero__sub">Un ou plusieurs liens à la fois, avec choix de la qualité et suivi de téléchargement en temps réel.</p>
+      </section>
 
-    <div id="status" class="status hidden"></div>
+      <section class="panel" aria-label="Formulaire de récupération">
+        <label class="field-label" for="linksInput">Liens Facebook</label>
+        <textarea
+          id="linksInput"
+          placeholder="https://www.facebook.com/.../videos/...&#10;https://www.facebook.com/share/v/..."
+          rows="5"
+        ></textarea>
 
-    <div id="results" class="results"></div>
+        <div class="panel__row">
+          <div class="panel__field">
+            <label class="field-label" for="qualitySelect">Qualité</label>
+            <select id="qualitySelect">
+              <option value="best">Meilleure qualité disponible</option>
+              <option value="hd">HD — jusqu'à 720p</option>
+              <option value="sd">SD — jusqu'à 480p, plus léger</option>
+            </select>
+          </div>
+          <button id="submitBtn" class="btn btn--primary">Récupérer les vidéos</button>
+        </div>
+      </section>
+
+      <p id="status" class="status hidden"></p>
+
+      <button id="downloadAllBtn" class="btn btn--accent hidden"></button>
+
+      <section id="results" class="results" aria-live="polite"></section>
+
+      <p id="emptyState" class="empty-state">Tes vidéos récupérées apparaîtront ici, prêtes à lire ou à télécharger.</p>
+    </main>
+
+    <footer class="footer">
+      <p>Fonctionne uniquement avec des vidéos Facebook publiques.</p>
+    </footer>
   </div>
 
   <script src="script.js"></script>
