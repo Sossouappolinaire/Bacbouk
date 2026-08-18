@@ -4,6 +4,7 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
+const YT_DLP_BIN = path.join(__dirname, 'yt-dlp-bin');
 
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -15,7 +16,7 @@ function extractVideo(url) {
   return new Promise((resolve) => {
     const args = ['-j', '-f', 'best[ext=mp4]/best', '--no-playlist', '--', url];
 
-    execFile('yt-dlp', args, { timeout: 30000, maxBuffer: 1024 * 1024 * 10 }, (error, stdout) => {
+    execFile(YT_DLP_BIN, args, { timeout: 30000, maxBuffer: 1024 * 1024 * 10 }, (error, stdout) => {
       if (error) {
         const reason = error.code === 'ENOENT'
           ? 'yt-dlp n’est pas installé sur le serveur.'
