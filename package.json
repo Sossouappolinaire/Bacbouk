@@ -1,16 +1,15 @@
 {
-  "name": "fb-video-downloader",
+  "name": "feexpay-site-paiement",
   "version": "1.0.0",
-  "description": "Telecharge et lit des videos Facebook a partir de liens",
+  "description": "Page de paiement Mobile Money avec FeexPay v2",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "postinstall": "curl -fL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ./yt-dlp-bin && chmod a+rx ./yt-dlp-bin"
+    "start": "node server.js"
   },
-  "engines": {
-    "node": ">=18"
-  },
+  "engines": { "node": ">=18" },
   "dependencies": {
-    "express": "^4.19.2"
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0"
   }
 }

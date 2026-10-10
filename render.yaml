@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: feexpay-site-paiement
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: FEEXPAY_API_KEY
+        sync: false
+      - key: FEEXPAY_SHOP_ID
+        sync: false
+      - key: BASE_URL
+        sync: false
+      - key: ADMIN_PIN
+        sync: false
