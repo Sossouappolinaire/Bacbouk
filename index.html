@@ -1,74 +1,392 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Flux — Téléchargeur de vidéos Facebook</title>
-  <meta name="description" content="Colle un ou plusieurs liens de vidéos Facebook, choisis la qualité, et télécharge-les avec suivi de progression en direct." />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2310131C'/%3E%3Cpath d='M10 9v10l9-5z' fill='%2314B8A6'/%3E%3C/svg%3E" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paiement Mobile Money</title>
+<style>
+  :root { --bg:#f4f6fb; --card:#fff; --text:#1b2330; --muted:#6b7587; --brand:#0a7cff; --ok:#12a150; --err:#d93636; --line:#dfe4ee; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--text); display:flex; min-height:100vh; align-items:center; justify-content:center; padding:16px; }
+  .card { background:var(--card); width:100%; max-width:440px; border-radius:16px; padding:24px; box-shadow:0 8px 30px rgba(20,30,60,.08); }
+  h1 { font-size:1.35rem; margin:0 0 4px; }
+  p.sub { margin:0 0 20px; color:var(--muted); font-size:.92rem; }
+  label { display:block; font-size:.85rem; font-weight:600; margin:14px 0 6px; }
+  input, select { width:100%; padding:12px; border:1px solid var(--line); border-radius:10px; font-size:1rem; background:#fff; }
+  input:focus, select:focus { outline:2px solid var(--brand); border-color:transparent; }
+  .row { display:flex; gap:10px; } .row > div { flex:1; }
+  .phone { display:flex; gap:8px; } .phone .pre { width:84px; text-align:center; background:#f0f3f9; color:var(--muted); }
+  button { width:100%; margin-top:22px; padding:14px; border:0; border-radius:10px; background:var(--brand); color:#fff; font-size:1rem; font-weight:700; cursor:pointer; }
+  button:disabled { opacity:.6; cursor:not-allowed; }
+  .msg { margin-top:16px; padding:12px; border-radius:10px; font-size:.92rem; display:none; }
+  .msg.info { display:block; background:#e8f2ff; color:#0b4a99; }
+  .msg.ok { display:block; background:#e6f7ee; color:#0c6b37; }
+  .msg.err { display:block; background:#fdeaea; color:#9b1c1c; }
+  .hide { display:none; }
+  small.hint { color:var(--muted); font-size:.78rem; display:block; margin-top:4px; }
+  .top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .gear { width:auto; margin:0; padding:8px 12px; background:#f0f3f9; color:var(--text); font-size:.85rem; font-weight:600; border-radius:8px; }
+  .overlay { position:fixed; inset:0; background:rgba(15,20,35,.55); display:none; align-items:center; justify-content:center; padding:16px; z-index:10; }
+  .overlay.open { display:flex; }
+  .modal { background:#fff; width:100%; max-width:420px; border-radius:16px; padding:22px; max-height:92vh; overflow:auto; }
+  .modal h2 { margin:0 0 4px; font-size:1.15rem; }
+  .btn2 { background:#eef1f7; color:var(--text); margin-top:10px; }
+  .pin { letter-spacing:.5em; text-align:center; font-size:1.4rem; }
+  .seg { display:flex; gap:8px; margin-top:6px; }
+  .seg button { margin:0; padding:11px; background:#eef1f7; color:var(--text); font-size:.92rem; }
+  .seg button.on { background:var(--brand); color:#fff; }
+  .infobox { margin-top:14px; padding:12px; border-radius:10px; background:#f0f3f9; font-size:.88rem; color:var(--text); }
+  h3.sec { margin:20px 0 0; font-size:.95rem; padding-top:14px; border-top:1px solid var(--line); }
+</style>
 </head>
 <body>
-  <div id="topProgress" class="top-progress" aria-hidden="true"><span class="top-progress__bar"></span></div>
-
-  <div class="page">
-    <header class="header">
-      <div class="brand">
-        <span class="brand__mark" aria-hidden="true">
-          <svg viewBox="0 0 32 32" width="22" height="22"><rect width="32" height="32" rx="8" fill="#10131C"/><path d="M10 9v14l12-7z" fill="#14B8A6"/></svg>
-        </span>
-        <div class="brand__text">
-          <span class="brand__name">Flux</span>
-          <span class="brand__tagline">Téléchargeur de vidéos Facebook</span>
-        </div>
-      </div>
-    </header>
-
-    <main>
-      <section class="hero">
-        <p class="eyebrow">Lien → fichier</p>
-        <h1>Colle un lien, récupère la vidéo.</h1>
-        <p class="hero__sub">Un ou plusieurs liens à la fois, avec choix de la qualité et suivi de téléchargement en temps réel.</p>
-      </section>
-
-      <section class="panel" aria-label="Formulaire de récupération">
-        <label class="field-label" for="linksInput">Liens Facebook</label>
-        <textarea
-          id="linksInput"
-          placeholder="https://www.facebook.com/.../videos/...&#10;https://www.facebook.com/share/v/..."
-          rows="5"
-        ></textarea>
-
-        <div class="panel__row">
-          <div class="panel__field">
-            <label class="field-label" for="qualitySelect">Qualité</label>
-            <select id="qualitySelect">
-              <option value="best">Meilleure qualité disponible</option>
-              <option value="hd">HD — jusqu'à 720p</option>
-              <option value="sd">SD — jusqu'à 480p, plus léger</option>
-            </select>
-          </div>
-          <button id="submitBtn" class="btn btn--primary">Récupérer les vidéos</button>
-        </div>
-      </section>
-
-      <p id="status" class="status hidden"></p>
-
-      <button id="downloadAllBtn" class="btn btn--accent hidden"></button>
-
-      <section id="results" class="results" aria-live="polite"></section>
-
-      <p id="emptyState" class="empty-state">Tes vidéos récupérées apparaîtront ici, prêtes à lire ou à télécharger.</p>
-    </main>
-
-    <footer class="footer">
-      <p>Fonctionne uniquement avec des vidéos Facebook publiques.</p>
-    </footer>
+<main class="card">
+  <div class="top">
+    <div>
+      <h1>Paiement Mobile Money</h1>
+      <p class="sub">Paiement sécurisé via FeexPay</p>
+    </div>
+    <button type="button" id="gearBtn" class="gear">⚙ Paramètres</button>
   </div>
 
-  <script src="script.js"></script>
+  <form id="form" novalidate>
+    <div class="row">
+      <div><label for="first">Prénom</label><input id="first" autocomplete="given-name"></div>
+      <div><label for="last">Nom</label><input id="last" autocomplete="family-name"></div>
+    </div>
+
+    <label for="amount">Montant (XOF)</label>
+    <input id="amount" type="number" inputmode="numeric" min="100" step="1" placeholder="5000" required>
+
+    <div id="methodBox" class="hide">
+      <label>Moyen de paiement</label>
+      <div class="seg">
+        <button type="button" id="mMobile" class="on">📱 Mobile Money</button>
+        <button type="button" id="mCrypto">🪙 Cryptomonnaie</button>
+      </div>
+    </div>
+
+    <div id="mobileFields">
+    <div class="row">
+      <div><label for="country">Pays</label><select id="country"></select></div>
+      <div><label for="network">Réseau</label><select id="network"></select></div>
+    </div>
+
+    <label for="phone">Numéro de téléphone</label>
+    <div class="phone">
+      <input id="prefix" class="pre" readonly aria-label="Indicatif">
+      <input id="phone" type="tel" inputmode="numeric" placeholder="Numéro" autocomplete="tel-national" required>
+    </div>
+    <small class="hint" id="phoneHint"></small>
+
+    <div id="otpBox" class="hide">
+      <label for="otp">Code OTP</label>
+      <input id="otp" inputmode="numeric" maxlength="8">
+      <small class="hint" id="otpHint"></small>
+    </div>
+    </div>
+
+    <div id="cryptoInfo" class="infobox hide"></div>
+
+    <button id="btn" type="submit">Payer</button>
+  </form>
+
+  <div id="msg" class="msg"></div>
+</main>
+
+<div id="overlay" class="overlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <!-- Étape 1 : PIN -->
+    <form id="pinForm" novalidate>
+      <h2>Paramètres</h2>
+      <p class="sub">Saisissez le PIN pour continuer.</p>
+      <input id="pin" class="pin" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="••••">
+      <button type="submit" id="pinBtn">Valider</button>
+      <button type="button" class="btn2 closeBtn">Fermer</button>
+      <div id="pinMsg" class="msg"></div>
+    </form>
+
+    <!-- Étape 2 : réglages -->
+    <form id="setForm" class="hide" novalidate>
+      <h2>Réglages FeexPay</h2>
+      <p class="sub">Ces valeurs sont enregistrées sur le serveur, jamais dans la page.</p>
+
+      <label for="sKey">Clé API (commence par fp_)</label>
+      <input id="sKey" type="password" autocomplete="off" placeholder="fp_...">
+      <small class="hint" id="sKeyHint"></small>
+
+      <label for="sShop">ID de la boutique</label>
+      <input id="sShop" autocomplete="off" placeholder="Ayg9lkjkhurIvNp">
+
+      <label for="sBase">URL du site</label>
+      <input id="sBase" type="url" autocomplete="off" placeholder="https://mon-site.com">
+      <small class="hint">Utilisée pour le retour après paiement (Wave, Orange, Moov CI...).</small>
+
+      <h3 class="sec">Paiement crypto (MakaPay) — facultatif</h3>
+
+      <label for="mKey">Clé API MakaPay</label>
+      <input id="mKey" type="password" autocomplete="off">
+      <small class="hint" id="mKeyHint"></small>
+
+      <label for="mWallet">Adresse du portefeuille qui reçoit l'argent</label>
+      <input id="mWallet" autocomplete="off" placeholder="0x...">
+
+      <div class="row">
+        <div><label for="mChain">Chain ID</label><input id="mChain" inputmode="numeric" placeholder="56"></div>
+        <div><label for="mRate">XOF pour 1 USD</label><input id="mRate" inputmode="numeric" placeholder="600"></div>
+      </div>
+      <small class="hint">56 = BNB Smart Chain (USDT BEP-20). Le taux sert à convertir le montant en XOF en stablecoin (≈ 1 USD).</small>
+
+      <label for="mToken">Adresse du token (contrat)</label>
+      <input id="mToken" autocomplete="off" placeholder="0x...">
+
+      <label for="mHook">Clé de signature du webhook MakaPay</label>
+      <input id="mHook" type="password" autocomplete="off">
+      <small class="hint" id="mHookHint">URL du webhook à mettre dans MakaPay : <span id="hookUrl"></span> (laissez vide = la clé API sert de clé)</small>
+
+      <button type="submit" id="saveBtn">Enregistrer et vérifier</button>
+      <button type="button" class="btn2" id="verifyBtn">Revérifier la connexion</button>
+      <button type="button" class="btn2 closeBtn">Fermer</button>
+      <div id="setMsg" class="msg"></div>
+    </form>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let cfg, waitingOtp = false, pollTimer = null, method = "mobile";
+
+function setMethod(m) {
+  method = m;
+  $("mMobile").classList.toggle("on", m === "mobile");
+  $("mCrypto").classList.toggle("on", m === "crypto");
+  $("mobileFields").classList.toggle("hide", m === "crypto");
+  $("phone").required = m === "mobile";
+  updateCryptoInfo();
+}
+
+function updateCryptoInfo() {
+  const box = $("cryptoInfo");
+  if (method !== "crypto" || !cfg) { box.classList.add("hide"); return; }
+  box.classList.remove("hide");
+  const xof = Number($("amount").value);
+  const usd = xof ? (xof / cfg.xofPerUsd).toFixed(2) : "—";
+  box.textContent = "Vous serez redirigé vers une page sécurisée. Payez uniquement en USDT sur le réseau BNB Smart Chain (BEP-20), sinon les fonds peuvent être perdus. Montant estimé : " + usd + " USDT (taux : " + cfg.xofPerUsd + " XOF = 1 USD).";
+}
+
+async function pollCrypto(orderId, tries = 0) {
+  clearTimeout(pollTimer);
+  show("Vérification de votre paiement crypto…", "info");
+  if (tries > 30) { show("Paiement toujours en attente de confirmation. Vous serez notifié dès qu'il sera validé.", "info"); return; }
+  try {
+    const d = await (await fetch("/api/crypto/status/" + encodeURIComponent(orderId))).json();
+    if (d.status === "completed") { show("Paiement crypto réussi ✅ Merci !", "ok"); try { sessionStorage.removeItem("cryptoOrder"); } catch (_) {} return; }
+    if (["failed", "expired", "cancelled", "sanctioned"].includes(d.status)) { show("Paiement crypto non abouti (" + d.status + ").", "err"); return; }
+    if (d.status === "paid") show("Paiement reçu, confirmation en cours…", "info");
+  } catch (_) { /* on réessaie */ }
+  pollTimer = setTimeout(() => pollCrypto(orderId, tries + 1), 5000);
+}
+
+function show(text, kind) { const m = $("msg"); m.textContent = text; m.className = "msg " + kind; }
+
+async function init() {
+  cfg = await (await fetch("/api/config")).json();
+  $("amount").min = cfg.min;
+  $("country").innerHTML = cfg.countries.map(c => `<option value="${c.code}">${c.name}</option>`).join("");
+  onCountry();
+  const q = new URLSearchParams(location.search);
+  $("methodBox").classList.toggle("hide", !cfg.cryptoEnabled);
+  if (!cfg.cryptoEnabled && method === "crypto") setMethod("mobile");
+  if (q.get("makapay")) {
+    let o = null; try { o = sessionStorage.getItem("cryptoOrder"); } catch (_) {}
+    if (o) pollCrypto(o); else show("Merci ! Votre paiement crypto est en cours de confirmation.", "info");
+  }
+  if (q.get("done")) show("Merci ! Si vous avez validé le paiement, il sera confirmé dans quelques instants.", "ok");
+  if (q.get("cancel")) show("Paiement annulé.", "err");
+}
+
+function currentCountry() { return cfg.countries.find(c => c.code === $("country").value); }
+function currentNetwork() { return currentCountry().networks.find(n => n.key === $("network").value); }
+
+function onCountry() {
+  const c = currentCountry();
+  $("prefix").value = "+" + c.prefix;
+  $("network").innerHTML = c.networks.map(n => `<option value="${n.key}">${n.label}</option>`).join("");
+  $("phoneHint").textContent = c.code === "BJ" ? "Bénin : 10 chiffres commençant par 01 (ex : 0166000000)" : "";
+  onNetwork();
+}
+
+function onNetwork() {
+  const n = currentNetwork();
+  const needOtp = n.flow === "otp";
+  $("otpBox").classList.toggle("hide", !needOtp);
+  if (needOtp) $("otpHint").textContent = "Composez #144*4*6*montant# sur votre téléphone pour obtenir le code (Orange Burkina).";
+  waitingOtp = false;
+  $("btn").textContent = "Payer";
+}
+
+$("country").addEventListener("change", onCountry);
+$("network").addEventListener("change", onNetwork);
+
+async function poll(reference, tries = 0) {
+  clearTimeout(pollTimer);
+  if (tries > 40) { show("Toujours en attente. Vérifiez votre téléphone, nous vous confirmerons le paiement par la suite.", "info"); $("btn").disabled = false; return; }
+  try {
+    const r = await fetch("/api/status/" + encodeURIComponent(reference));
+    const d = await r.json();
+    if (d.status === "SUCCESSFUL") { show("Paiement réussi ✅ Merci !", "ok"); $("btn").disabled = false; return; }
+    if (d.status === "FAILED") { show("Paiement échoué" + (d.reason ? " (" + d.reason + ")" : "") + ". Vous pouvez réessayer.", "err"); $("btn").disabled = false; return; }
+  } catch (_) { /* on réessaie */ }
+  pollTimer = setTimeout(() => poll(reference, tries + 1), 4000);
+}
+
+$("mMobile").addEventListener("click", () => setMethod("mobile"));
+$("mCrypto").addEventListener("click", () => setMethod("crypto"));
+$("amount").addEventListener("input", updateCryptoInfo);
+
+$("form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  if (method === "crypto") {
+    if (!$("amount").value) return show("Renseignez le montant.", "err");
+    $("btn").disabled = true;
+    show("Création du paiement crypto…", "info");
+    try {
+      const r = await fetch("/api/crypto/pay", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount: $("amount").value }) });
+      const d = await r.json();
+      if (!r.ok) { show(d.error || "Erreur.", "err"); $("btn").disabled = false; return; }
+      try { sessionStorage.setItem("cryptoOrder", d.orderId); } catch (_) {}
+      show("Redirection vers la page de paiement crypto…", "info");
+      location.href = d.url;
+    } catch (_) { show("Impossible de joindre le serveur.", "err"); $("btn").disabled = false; }
+    return;
+  }
+
+  const n = currentNetwork();
+  const body = {
+    network: n.key,
+    phone: $("phone").value,
+    amount: $("amount").value,
+    first_name: $("first").value,
+    last_name: $("last").value,
+    otp: $("otp").value,
+    description: "Paiement en ligne",
+  };
+  if (!body.amount || !body.phone) return show("Renseignez le montant et le numéro.", "err");
+
+  $("btn").disabled = true;
+  show("Envoi de la demande…", "info");
+  try {
+    const r = await fetch("/api/pay", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const d = await r.json();
+    if (!r.ok) { show(d.error || "Erreur.", "err"); $("btn").disabled = false; return; }
+
+    if (d.needsOtp) {
+      // Coris : un SMS contenant l'OTP vient d'être envoyé, puis on renvoie la même requête avec l'OTP.
+      $("otpBox").classList.remove("hide");
+      $("otpHint").textContent = "Saisissez le code reçu par SMS puis cliquez à nouveau sur Payer.";
+      $("btn").textContent = "Valider le code";
+      show("Un code vous a été envoyé par SMS.", "info");
+      $("btn").disabled = false;
+      return;
+    }
+    if (d.payment_url) { show("Redirection vers la page de paiement…", "info"); location.href = d.payment_url; return; }
+    if (d.reference) { show("Confirmez le paiement sur votre téléphone (code USSD / notification)…", "info"); poll(d.reference); return; }
+    show("Demande envoyée.", "info"); $("btn").disabled = false;
+  } catch (err) {
+    show("Impossible de joindre le serveur.", "err"); $("btn").disabled = false;
+  }
+});
+
+// ---------------- Paramètres (PIN + réglages) ----------------
+let adminToken = null;
+
+function showIn(id, text, kind) { const m = $(id); m.textContent = text; m.className = "msg " + kind; }
+function openOverlay() { $("overlay").classList.add("open"); adminToken ? showSettings() : showPin(); }
+function closeOverlay() { $("overlay").classList.remove("open"); $("pin").value = ""; $("sKey").value = ""; }
+function showPin() { $("pinForm").classList.remove("hide"); $("setForm").classList.add("hide"); $("pinMsg").className = "msg"; setTimeout(() => $("pin").focus(), 50); }
+
+async function adminFetch(url, opts = {}) {
+  const r = await fetch(url, {
+    ...opts,
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + adminToken },
+  });
+  if (r.status === 401) { adminToken = null; showPin(); throw new Error("Session expirée. Saisissez à nouveau le PIN."); }
+  return r;
+}
+
+async function showSettings() {
+  $("pinForm").classList.add("hide"); $("setForm").classList.remove("hide"); $("setMsg").className = "msg";
+  try {
+    const d = await (await adminFetch("/api/admin/settings")).json();
+    $("sShop").value = d.shopId || "";
+    $("sBase").value = d.baseUrl || location.origin;
+    $("sKey").value = "";
+    $("sKeyHint").textContent = d.hasApiKey ? "Clé actuelle : " + d.apiKeyMasked + " (laissez vide pour la conserver)" : "Aucune clé enregistrée.";
+    $("mKey").value = ""; $("mHook").value = "";
+    $("mKeyHint").textContent = d.hasMkApiKey ? "Clé actuelle : " + d.mkApiKeyMasked + " (laissez vide pour la conserver)" : "Aucune clé enregistrée.";
+    $("mWallet").value = d.mkWallet || ""; $("mChain").value = d.mkChainId || "56";
+    $("mToken").value = d.mkToken || ""; $("mRate").value = d.xofPerUsd || 600;
+    $("hookUrl").textContent = (d.baseUrl || location.origin) + "/api/webhook/makapay";
+  } catch (e) { showIn("pinMsg", e.message, "err"); }
+}
+
+function showVerification(v, c) {
+  const lines = [];
+  let allOk = true;
+  lines.push((v.ok ? "✅ FeexPay : " : "⚠ FeexPay : ") + v.message + (v.shopName ? " Boutique : " + v.shopName + "." : ""));
+  if (!v.ok) allOk = false;
+  if (c) { lines.push((c.ok ? "✅ Crypto : " : "⚠ Crypto : ") + c.message); if (!c.ok) allOk = false; }
+  showIn("setMsg", "Enregistré.\n" + lines.join("\n"), allOk ? "ok" : "err");
+  $("setMsg").style.whiteSpace = "pre-line";
+}
+
+$("gearBtn").addEventListener("click", openOverlay);
+document.querySelectorAll(".closeBtn").forEach(b => b.addEventListener("click", closeOverlay));
+$("overlay").addEventListener("click", (e) => { if (e.target === $("overlay")) closeOverlay(); });
+
+$("pinForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("pinBtn").disabled = true;
+  try {
+    const r = await fetch("/api/admin/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pin: $("pin").value }) });
+    const d = await r.json();
+    if (!r.ok) { showIn("pinMsg", d.error || "Erreur.", "err"); $("pin").value = ""; return; }
+    adminToken = d.token; $("pin").value = "";
+    showSettings();
+  } catch (_) { showIn("pinMsg", "Impossible de joindre le serveur.", "err"); }
+  finally { $("pinBtn").disabled = false; }
+});
+
+$("setForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("saveBtn").disabled = true;
+  showIn("setMsg", "Enregistrement et vérification en cours…", "info");
+  try {
+    const r = await adminFetch("/api/admin/settings", { method: "POST", body: JSON.stringify({ apiKey: $("sKey").value, shopId: $("sShop").value, baseUrl: $("sBase").value, mkApiKey: $("mKey").value, mkWallet: $("mWallet").value, mkChainId: $("mChain").value, mkToken: $("mToken").value, mkWebhookKey: $("mHook").value, xofPerUsd: $("mRate").value }) });
+    const d = await r.json();
+    if (!r.ok) { showIn("setMsg", d.error || "Erreur.", "err"); return; }
+    $("sKey").value = ""; $("mKey").value = ""; $("mHook").value = "";
+    $("sKeyHint").textContent = "Clé actuelle : " + d.settings.apiKeyMasked + " (laissez vide pour la conserver)";
+    if (d.settings.mkApiKeyMasked) $("mKeyHint").textContent = "Clé actuelle : " + d.settings.mkApiKeyMasked + " (laissez vide pour la conserver)";
+    showVerification(d.verification, d.cryptoVerification);
+    init(); // rafraîchit l'état du site
+  } catch (err) { showIn("setMsg", err.message || "Erreur.", "err"); }
+  finally { $("saveBtn").disabled = false; }
+});
+
+$("verifyBtn").addEventListener("click", async () => {
+  showIn("setMsg", "Vérification en cours…", "info");
+  try {
+    const d = await (await adminFetch("/api/admin/verify", { method: "POST" })).json();
+    const lines = [(d.verification.ok ? "✅ FeexPay : " : "⚠ FeexPay : ") + d.verification.message];
+    if (d.cryptoVerification) lines.push((d.cryptoVerification.ok ? "✅ Crypto : " : "⚠ Crypto : ") + d.cryptoVerification.message);
+    showIn("setMsg", lines.join("\n"), d.verification.ok && (!d.cryptoVerification || d.cryptoVerification.ok) ? "ok" : "err");
+    $("setMsg").style.whiteSpace = "pre-line";
+  } catch (err) { showIn("setMsg", err.message || "Erreur.", "err"); }
+});
+
+init();
+</script>
 </body>
 </html>

@@ -54,6 +54,15 @@ app.set("trust proxy", 1);
 app.use(express.json({ limit: "20kb", verify: (req, _res, buf) => { req.rawBody = buf; } }));
 app.use(express.static(path.join(__dirname, "public")));
 
+// Page d'accueil : cherche public/index.html, sinon index.html à la racine du projet
+// (utile si le dossier public/ a été perdu lors de l'envoi des fichiers sur GitHub).
+app.get("/", (_req, res) => {
+  const candidates = [path.join(__dirname, "public", "index.html"), path.join(__dirname, "index.html")];
+  const file = candidates.find((p) => fs.existsSync(p));
+  if (file) return res.sendFile(file);
+  res.status(500).send("index.html introuvable : placez-le dans le dossier public/ du projet.");
+});
+
 const limiter = rateLimit({ windowMs: 60 * 1000, max: 30 });
 app.use("/api/", limiter);
 
